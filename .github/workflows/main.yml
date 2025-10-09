@@ -138,8 +138,6 @@ jobs:
           echo "🚀 Deploying CDK stack to LocalStack..."
           cdk deploy --require-approval never \
             --context endpoint-url=$LOCALSTACK_ENDPOINT \
-            --context aws:cdk:enable-path-metadata=false \
-            --context aws:cdk:enable-asset-metadata=false \
             --outputs-file ./cdk-localstack-outputs.json || exit 1
 
           echo "✅ CDK deployment complete in LocalStack."

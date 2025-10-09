@@ -137,10 +137,8 @@ jobs:
           cdk synth
 
           echo "🚀 Deploying CDK stack to LocalStack..."
-          cdk deploy --require-approval never \
-            --context endpoint-url=$LOCALSTACK_ENDPOINT \
-            --outputs-file ./cdk-localstack-outputs.json || exit 1
-
+          cdk deploy --require-approval never
+          
           echo "✅ CDK deployment complete in LocalStack."
 
           # Display CloudFormation outputs (optional)

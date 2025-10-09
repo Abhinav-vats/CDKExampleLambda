@@ -18,6 +18,8 @@ public class InfraApp {
         String deployEnv = System.getenv("DEPLOY_ENV");
         String region = System.getenv("AWS_DEFAULT_REGION");
 
+        System.out.println(deployEnv);
+
 
         if ("test".equalsIgnoreCase(deployEnv)) {
             new InfraStack(app, "dummy", StackProps.builder()

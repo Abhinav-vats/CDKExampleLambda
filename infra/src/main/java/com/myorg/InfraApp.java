@@ -28,7 +28,7 @@ public class InfraApp {
                     .build());
 
             SnsClient snsClient = SnsClient.builder()
-                    .endpointOverride(URI.create(System.getenv("AWS_ENDPOINT_URL")))
+                    .endpointOverride(URI.create(System.getenv("LOCALSTACK_ENDPOINT")))
                     .region(Region.of(System.getenv("AWS_DEFAULT_REGION")))
                     .credentialsProvider(StaticCredentialsProvider.create(
                             AwsBasicCredentials.create("test","test")

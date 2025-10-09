@@ -1,0 +1,9 @@
+[
+  {
+  "Source": "new.order",
+  "DetailType": "NewOrderEvent",
+  "Detail": "{\"name\": \"Mayannk Pandey\", \"age\":27, \"isStudent\": false}",
+  "EventBusName": "NewOrderAppBus"
+  }
+]
+

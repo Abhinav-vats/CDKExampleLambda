@@ -127,6 +127,7 @@ jobs:
           export AWS_PAGER=""
           export DEPLOY_ENV=test
           export CDK_DEPLOY_REGION=$AWS_REGION
+          export NODE_TLS_REJECT_UNAUTHORIZED=0
           export CDK_DEPLOY_ACCOUNT=000000000000
           export AWS_ACCESS_KEY_ID=test
           export AWS_SECRET_ACCESS_KEY=test

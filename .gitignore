@@ -3,3 +3,4 @@
 assets/
 target/
 *-pom.xml
+cdk.out

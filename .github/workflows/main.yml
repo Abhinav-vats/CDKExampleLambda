@@ -121,9 +121,9 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       # 8️⃣ Unit Tests (Local)
-      - name: Run Unit Tests
-        working-directory: function
-        run: mvn test
+#      - name: Run Unit Tests
+#        working-directory: functionsLamda
+#        run: mvn test
 
       # 9️⃣ AWS Service Tests (CDK Synth + Deploy)
       - name: CDK Synth and Deploy

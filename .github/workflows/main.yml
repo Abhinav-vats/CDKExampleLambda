@@ -92,7 +92,7 @@ jobs:
           awslocal events list-event-buses
 
           # Publish test event
-          awslocal events put-events --entries file://testdata/eventbridge-event.json
+          awslocal events put-events --entries file://abc.json
 
           echo "LocalStack service emulation complete ✅"
 

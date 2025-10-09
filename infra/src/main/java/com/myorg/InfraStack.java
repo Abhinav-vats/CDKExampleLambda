@@ -32,6 +32,7 @@ public class InfraStack extends Stack {
 
 
 
+
         Queue queue = Queue.Builder.create(this, "workflow-queue")
                 .queueName("NewOrderQueue")
                 .visibilityTimeout(Duration.seconds(60))

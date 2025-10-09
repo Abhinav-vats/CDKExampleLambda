@@ -3,7 +3,12 @@ package com.myorg;
 import software.amazon.awscdk.App;
 import software.amazon.awscdk.Environment;
 import software.amazon.awscdk.StackProps;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.sns.SnsClient;
 
+import java.net.URI;
 import java.util.Arrays;
 
 public class InfraApp {
@@ -21,6 +26,15 @@ public class InfraApp {
                             .region(region)
                             .build())
                     .build());
+
+            SnsClient snsClient = SnsClient.builder()
+                    .endpointOverride(URI.create(System.getenv("AWS_ENDPOINT_URL")))
+                    .region(Region.of(System.getenv("AWS_DEFAULT_REGION")))
+                    .credentialsProvider(StaticCredentialsProvider.create(
+                            AwsBasicCredentials.create("test","test")
+                    ))
+                    .build();
+
         }else{
             new InfraStack(app, "LambdaCDKStack", StackProps.builder().build());
         }

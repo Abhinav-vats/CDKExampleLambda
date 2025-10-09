@@ -9,16 +9,13 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sns.SnsClient;
 
 import java.net.URI;
-import java.util.Arrays;
 
 public class InfraApp {
     public static void main(final String[] args) {
         App app = new App();
 
         String deployEnv = System.getenv("DEPLOY_ENV");
-        String region = System.getenv("AWS_DEFAULT_REGION");
-
-        System.out.println(deployEnv);
+        String region = System.getenv("CDK_DEPLOY_REGION");
 
 
         if ("test".equalsIgnoreCase(deployEnv)) {

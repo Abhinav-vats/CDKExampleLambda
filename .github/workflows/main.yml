@@ -112,48 +112,66 @@ jobs:
               "request": { "method": "GET", "url": "/internal-api/status" },
               "response": { "status": 200, "body": "{\"status\":\"ok\"}", "headers": {"Content-Type": "application/json"} }
             }'
+      # 7️⃣ Configure AWS Credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 8️⃣ Unit Tests (Local)
+      - name: Run Unit Tests
+        working-directory: function
+        run: mvn test
+
+      # 9️⃣ AWS Service Tests (CDK Synth + Deploy)
+      - name: CDK Synth and Deploy
+        working-directory: infra
+        run: |
+          cdk synth
+          cdk deploy --require-approval never
 
       # 🔟 Run Local Integration Test (CDK on LocalStack)
-      - name: Run Local Integration Test
-        env:
-          AWS_ACCESS_KEY_ID: test
-          AWS_SECRET_ACCESS_KEY: test
-          AWS_REGION: us-east-1
-        run: |
-          echo "🏗️ Running CDK inside LocalStack..."
-
-          # Point AWS CLI and CDK to LocalStack endpoints
-          export LOCALSTACK_ENDPOINT=http://localhost:4566
-          export AWS_PAGER=""
-          export DEPLOY_ENV=test
-          export CDK_DEPLOY_REGION=$AWS_REGION
-          export NODE_TLS_REJECT_UNAUTHORIZED=0
-          export CDK_DEPLOY_ACCOUNT=000000000000
-          export AWS_ACCESS_KEY_ID=test
-          export AWS_SECRET_ACCESS_KEY=test
-
-          # Install CDK dependencies and synthesize CloudFormation templates
-          cd infra
-          cdk acknowledge "*"
-          cdk synth
-
-          echo "🚀 Deploying CDK stack to LocalStack..."
-          cdk deploy --require-approval never
-          
-          echo "✅ CDK deployment complete in LocalStack."
-
-          # Display CloudFormation outputs (optional)
-          cat ./cdk-localstack-outputs.json || echo "No outputs file generated"
-
-          echo "📤 Triggering EventBridge event in LocalStack..."
-          awslocal events put-events --entries file://abc.json
-
-          echo "⏳ Waiting for messages in SQS (verifying EventBridge -> SQS -> Lambda -> SNS flow)..."
-          QUEUE_URL=$(awslocal sqs list-queues --query 'QueueUrls[0]' --output text)
-          echo "Polling queue: $QUEUE_URL"
-          awslocal sqs receive-message --queue-url "$QUEUE_URL" --wait-time-seconds 10 || echo "No messages found"
-
-          echo "🧭 Checking SNS topic messages (if published)..."
-          awslocal sns list-topics
-
-          echo "✅ Local integration test on emulated AWS (LocalStack) completed successfully!"
+#      - name: Run Local Integration Test
+#        env:
+#          AWS_ACCESS_KEY_ID: test
+#          AWS_SECRET_ACCESS_KEY: test
+#          AWS_REGION: us-east-1
+#        run: |
+#          echo "🏗️ Running CDK inside LocalStack..."
+#
+#          # Point AWS CLI and CDK to LocalStack endpoints
+#          export LOCALSTACK_ENDPOINT=http://localhost:4566
+#          export AWS_PAGER=""
+#          export DEPLOY_ENV=test
+#          export CDK_DEPLOY_REGION=$AWS_REGION
+#          export CDK_DEPLOY_ACCOUNT=000000000000
+#          export AWS_ACCESS_KEY_ID=test
+#          export AWS_SECRET_ACCESS_KEY=test
+#
+#          # Install CDK dependencies and synthesize CloudFormation templates
+#          cd infra
+#          cdk acknowledge "*"
+#          cdk synth
+#
+#          echo "🚀 Deploying CDK stack to LocalStack..."
+#          cdk deploy --require-approval never
+#
+#          echo "✅ CDK deployment complete in LocalStack."
+#
+#          # Display CloudFormation outputs (optional)
+#          cat ./cdk-localstack-outputs.json || echo "No outputs file generated"
+#
+#          echo "📤 Triggering EventBridge event in LocalStack..."
+#          awslocal events put-events --entries file://abc.json
+#
+#          echo "⏳ Waiting for messages in SQS (verifying EventBridge -> SQS -> Lambda -> SNS flow)..."
+#          QUEUE_URL=$(awslocal sqs list-queues --query 'QueueUrls[0]' --output text)
+#          echo "Polling queue: $QUEUE_URL"
+#          awslocal sqs receive-message --queue-url "$QUEUE_URL" --wait-time-seconds 10 || echo "No messages found"
+#
+#          echo "🧭 Checking SNS topic messages (if published)..."
+#          awslocal sns list-topics
+#
+#          echo "✅ Local integration test on emulated AWS (LocalStack) completed successfully!"

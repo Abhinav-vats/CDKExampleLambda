@@ -44,11 +44,7 @@ jobs:
       # 5️⃣ Install AWS CLI + CDK + SAM CLI
       - name: Install AWS Tools
         run: |
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          sudo ./aws/install --update
           aws --version
-          rm -rf awscliv2.zip aws
           
           echo "Installing AWS CDK..."
           npm install -g aws-cdk

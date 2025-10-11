@@ -40,9 +40,8 @@ public class InfraStack extends Stack {
         Topic snsTopic = Topic.Builder.create(this, "MySnsTopic")
                 .topicName("new-order")
                 .displayName("My SNS Topic")
-                .messageRetentionPeriodInDays(14)
                 .build();
-        
+
         // CREATE LAMBDA FUNCTION
         Function lambdaFunction = Function.Builder.create(this, "new-order-lambda")
                 .runtime(Runtime.JAVA_17)

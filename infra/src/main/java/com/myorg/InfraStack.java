@@ -50,7 +50,8 @@ public class InfraStack extends Stack {
                 .timeout(Duration.seconds(50))
                 .functionName("NewOrderLambda")
                 .environment(Map.of(
-                        "SNS_TOPIC_ARN", snsTopic.getTopicArn()
+                        "SNS_TOPIC_ARN", snsTopic.getTopicArn(),
+                        "AWS_REGION", getRegion()
                 ))
                 .code(Code.fromAsset("../assets/function.jar")).build();
 

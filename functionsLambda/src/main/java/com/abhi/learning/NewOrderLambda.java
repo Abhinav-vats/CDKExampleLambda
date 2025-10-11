@@ -3,6 +3,7 @@ package com.abhi.learning;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.amazonaws.services.lambda.runtime.logging.LogLevel;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import software.amazon.awssdk.regions.Region;
@@ -28,11 +29,15 @@ public class NewOrderLambda implements RequestHandler<SQSEvent, String> {
         final ObjectMapper mapper= new ObjectMapper();
 
         try (SnsClient snsClient = SnsClient.builder()
-                .region(Region.AP_SOUTH_1) // Change region if needed
+                .region(Region.of(System.getenv("AWS_REGION"))) // Change region if needed
                 .build()) {
 
+            String bodyStr = sqsEvent.getRecords().get(0).getBody();
+
+            context.getLogger().log(bodyStr, LogLevel.INFO);
+
             Map<String, Object> body = mapper
-                    .convertValue(sqsEvent.getRecords().get(0).getBody(), new TypeReference<HashMap<String, Object>>() {});
+                    .convertValue(bodyStr, new TypeReference<HashMap<String, Object>>() {});
 
             Map<String, Object> msg = mapper
                     .convertValue(body.get("detail"),new TypeReference<HashMap<String, Object>>(){});

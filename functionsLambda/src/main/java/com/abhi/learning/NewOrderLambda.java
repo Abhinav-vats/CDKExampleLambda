@@ -11,6 +11,7 @@ import software.amazon.awssdk.services.sns.model.PublishRequest;
 import software.amazon.awssdk.services.sns.model.PublishResponse;
 
 import java.lang.reflect.Type;
+import java.util.HashMap;
 import java.util.Map;
 
 
@@ -31,10 +32,10 @@ public class NewOrderLambda implements RequestHandler<SQSEvent, String> {
                 .build()) {
 
             Map<String, Object> body = mapper
-                    .convertValue(sqsEvent.getRecords().get(0).getBody(), new TypeReference<>() {});
+                    .convertValue(sqsEvent.getRecords().get(0).getBody(), new TypeReference<HashMap<String, Object>>() {});
 
             Map<String, Object> msg = mapper
-                    .convertValue(body.get("detail"),new TypeReference<>(){});
+                    .convertValue(body.get("detail"),new TypeReference<HashMap<String, Object>>(){});
 
             String isOrNot = Boolean.parseBoolean(String.valueOf(msg.get("isStudent")))?"":" not ";
 

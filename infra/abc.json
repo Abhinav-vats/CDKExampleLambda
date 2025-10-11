@@ -2,7 +2,7 @@
   {
   "Source": "new.order",
   "DetailType": "NewOrderEvent",
-  "Detail": "{\"name\": \"Mayank Pandey\", \"age\":27, \"isStudent\": false, \"message\":\"Help me out!!!\"}",
+  "Detail": "{\"name\": \"Mayank Pandey\", \"age\":27, \"isStudent\": false, \"message\":\"Knock knock!!\"}",
   "EventBusName": "NewOrderAppBus"
   }
 ]

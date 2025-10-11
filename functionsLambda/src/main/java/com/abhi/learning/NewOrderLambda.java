@@ -1,6 +1,7 @@
 package com.abhi.learning;
 
 import com.amazonaws.services.lambda.runtime.Context;
+import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
 import com.amazonaws.services.lambda.runtime.logging.LogLevel;
@@ -19,6 +20,7 @@ import java.util.Map;
 /**
  * Hello world!
  */
+@SuppressWarnings("unchecked")
 public class NewOrderLambda implements RequestHandler<SQSEvent, String> {
 
     private static final String SNS_TOPIC_ARN = System.getenv("SNS_TOPIC_ARN");
@@ -29,32 +31,40 @@ public class NewOrderLambda implements RequestHandler<SQSEvent, String> {
         final ObjectMapper mapper= new ObjectMapper();
 
         try (SnsClient snsClient = SnsClient.builder()
-                .region(Region.of(System.getenv("AWS_REGION"))) // Change region if needed
+                .region(Region.of(sqsEvent.getRecords().get(0).getAwsRegion())) // Change region if needed
                 .build()) {
 
             String bodyStr = sqsEvent.getRecords().get(0).getBody();
 
-            context.getLogger().log(bodyStr, LogLevel.INFO);
+            LambdaLogger logger = context.getLogger();
 
             Map<String, Object> body = mapper
-                    .convertValue(bodyStr, new TypeReference<HashMap<String, Object>>() {});
+                    .readValue(bodyStr, new TypeReference<HashMap<String, Object>>() {});
 
-            Map<String, Object> msg = mapper
-                    .convertValue(body.get("detail"),new TypeReference<HashMap<String, Object>>(){});
+            if(body.get("detail") instanceof HashMap<?,?>) {
 
-            String isOrNot = Boolean.parseBoolean(String.valueOf(msg.get("isStudent")))?"":" not ";
+                Map<String, Object> msg = mapper.convertValue( body.get("detail"), HashMap.class);
 
-            String message = String
-                    .format("Hi %s, whose age is %d, and is%s student, is sending you a message, %s", msg.get("name"),
-                            Integer.parseInt(String.valueOf(msg.get("age"))), isOrNot, msg.get("message"));
+                logger.log(String.valueOf(msg), LogLevel.INFO);
 
-            PublishRequest publishRequest = PublishRequest.builder()
-                    .topicArn(SNS_TOPIC_ARN)
-                    .message(message)
-                    .build();
+                String isOrNot = Boolean.parseBoolean(String.valueOf(msg.get("isStudent"))) ? "" : " not ";
 
-            PublishResponse response = snsClient.publish(publishRequest);
-            context.getLogger().log("Message published successfully. MessageId: " + response.messageId());
+                logger.log(isOrNot, LogLevel.INFO);
+
+                String message = String
+                        .format("Hi %s, whose age is %d, and is%s student, is sending you a message, %s", msg.get("name"),
+                                Integer.parseInt(String.valueOf(msg.get("age"))), isOrNot, msg.get("message"));
+
+                logger.log(message, LogLevel.INFO);
+
+                PublishRequest publishRequest = PublishRequest.builder()
+                        .topicArn(SNS_TOPIC_ARN)
+                        .message(message)
+                        .build();
+
+                PublishResponse response = snsClient.publish(publishRequest);
+                context.getLogger().log("Message published successfully. MessageId: " + response.messageId());
+            }
         } catch (Exception e) {
             context.getLogger().log("Error publishing to SNS: " + e.getMessage());
             return "SNS Publish Failed: " + e.getMessage();

@@ -8,9 +8,9 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>functionsLambda</artifactId>
+    <artifactId>ErrorLogForwarder</artifactId>
 
-    <name>functionsLambda</name>
+    <name>ErrorLogForwarder</name>
     <!-- FIXME change it to the project's website -->
     <url>http://www.example.com</url>
 
@@ -93,22 +93,22 @@
 
     <build>
         <plugins>
-                <plugin>
-                    <artifactId>maven-shade-plugin</artifactId>
-                    <version>3.6.0</version>
-                    <executions>
-                        <execution>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>shade</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                    <configuration>
-                        <finalName>function</finalName>
-                        <outputDirectory>../assets</outputDirectory>
-                    </configuration>
-                </plugin>
-            </plugins>
+            <plugin>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <finalName>ErrorForwarder</finalName>
+                    <outputDirectory>../assets</outputDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>

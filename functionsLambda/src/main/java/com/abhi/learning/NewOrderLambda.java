@@ -3,10 +3,15 @@ package com.abhi.learning;
 import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.RequestHandler;
 import com.amazonaws.services.lambda.runtime.events.SQSEvent;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sns.model.PublishRequest;
 import software.amazon.awssdk.services.sns.model.PublishResponse;
+
+import java.lang.reflect.Type;
+import java.util.Map;
 
 
 /**
@@ -19,11 +24,24 @@ public class NewOrderLambda implements RequestHandler<SQSEvent, String> {
     @Override
     public String handleRequest(SQSEvent sqsEvent, Context context) {
 
+        final ObjectMapper mapper= new ObjectMapper();
+
         try (SnsClient snsClient = SnsClient.builder()
                 .region(Region.AP_SOUTH_1) // Change region if needed
                 .build()) {
 
-            String message = sqsEvent.getRecords().get(0).getBody();
+            Map<String, Object> body = mapper
+                    .convertValue(sqsEvent.getRecords().get(0).getBody(), new TypeReference<>() {});
+
+            Map<String, Object> msg = mapper
+                    .convertValue(body.get("detail"),new TypeReference<>(){});
+
+            String isOrNot = Boolean.parseBoolean(String.valueOf(msg.get("isStudent")))?"":" not ";
+
+            String message = String
+                    .format("Hi %s, whose age is %d, and is%s student, is sending you a message, %s", msg.get("name"),
+                            Integer.parseInt(String.valueOf(msg.get("age"))), isOrNot, msg.get("message"));
+
             PublishRequest publishRequest = PublishRequest.builder()
                     .topicArn(SNS_TOPIC_ARN)
                     .message(message)

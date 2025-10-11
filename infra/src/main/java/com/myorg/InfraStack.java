@@ -37,11 +37,11 @@ public class InfraStack extends Stack {
                 .queueName("NewOrderQueue")
                 .visibilityTimeout(Duration.seconds(60))
                 .build();
-        Topic snsTopic = new Topic(this, "MySnsTopic",
-                TopicProps.builder()
-                        .topicName("my-topic")
-                        .displayName("My SNS Topic")
-                        .build());
+        Topic snsTopic = Topic.Builder.create(this, "MySnsTopic")
+                .topicName("new-order")
+                .displayName("My SNS Topic")
+                .fifo(Boolean.TRUE)
+                .build();
 
         // CREATE LAMBDA FUNCTION
         Function lambdaFunction = Function.Builder.create(this, "new-order-lambda")

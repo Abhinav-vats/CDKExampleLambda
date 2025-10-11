@@ -29,9 +29,15 @@ jobs:
           distribution: temurin
           java-version: ${{ env.JAVA_VERSION }}
 
-      # 3️⃣ Build Lambda
+      # 3️⃣ Build NewOrder Lambda
       - name: Build Lambda JAR
         working-directory: functionsLambda
+        run: |
+          mvn clean package
+
+      # Build ErrorForwarder Lambda
+      - name: Build Lambda JAR
+        working-directory: ErrorLogForwarder
         run: |
           mvn clean package
 

@@ -1,0 +1,76 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  local-test-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ap-south-1
+      JAVA_VERSION: 17
+      NODE_VERSION: 24
+
+    steps:
+      # 1️⃣ Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup Java
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      # 3️⃣ Build NewOrder Lambda
+      - name: Build Lambda JAR
+        working-directory: functionsLambda
+        run: |
+          mvn clean package
+
+      # Build ErrorForwarder Lambda
+      - name: Build Lambda JAR
+        working-directory: ErrorLogForwarder
+        run: |
+          mvn clean package
+
+      # 4️⃣ Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # 5️⃣ Install AWS CLI + CDK + SAM CLI
+      - name: Install AWS Tools
+        run: |
+          aws --version
+          
+          echo "Installing AWS CDK..."
+          npm install -g aws-cdk
+          cdk --version
+          
+          sam --version
+          
+          
+          echo "All AWS developer tools installed successfully!"
+      # 7️⃣ Configure AWS Credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 9️⃣ AWS Service Tests (CDK Synth + Deploy)
+      - name: CDK Synth and Deploy
+        working-directory: infra
+        run: |
+          cdk synth
+          cdk deploy --require-approval never

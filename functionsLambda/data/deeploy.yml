@@ -1,0 +1,178 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  local-test-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ap-south-1
+      JAVA_VERSION: 17
+      NODE_VERSION: 24
+
+    steps:
+      # 1️⃣ Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup Java
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      # 3️⃣ Build Lambda
+      - name: Build Lambda JAR
+        working-directory: functionsLambda
+        run: |
+          mvn clean package
+
+      # 4️⃣ Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # 5️⃣ Install AWS CLI + CDK + SAM CLI
+      - name: Install AWS Tools
+        run: |
+          aws --version
+          
+          echo "Installing AWS CDK..."
+          npm install -g aws-cdk
+          cdk --version
+          
+          sam --version
+          
+          
+          echo "All AWS developer tools installed successfully!"
+
+      # 6️⃣ Run Unit Tests
+      #      - name: Run Unit Tests
+      #        working-directory: function
+      #        run: mvn test
+
+      # 7️⃣ Start LocalStack (Emulated AWS)
+      - name: Start LocalStack
+        uses: LocalStack/setup-localstack@v0.2.2
+        with:
+          services: eventbridge,sqs,lambda,sns
+          install-awslocal: true
+          image-tag: "latest"
+
+      # 8️⃣ Local AWS Service Test using LocalStack
+      - name: Run LocalStack Integration Tests
+        env:
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_REGION: us-east-1
+        run: |
+          echo "Creating local AWS resources on LocalStack..."
+
+          # Create EventBridge Bus
+          awslocal events create-event-bus --name local-bus
+
+          # Create SQS Queue
+          awslocal sqs create-queue --queue-name local-queue
+
+          # Create SNS Topic
+          awslocal sns create-topic --name local-topic
+
+          # Verify setup
+          awslocal sns list-topics
+          awslocal sqs list-queues
+          awslocal events list-event-buses
+
+          # Publish test event
+          awslocal events put-events --entries file://infra/abc.json
+
+          echo "LocalStack service emulation complete ✅"
+
+      # 9️⃣ Run WireMock to Mock Internal API
+      - name: Start WireMock Server
+        run: |
+          wget https://repo1.maven.org/maven2/com/github/tomakehurst/wiremock-jre8-standalone/2.35.0/wiremock-jre8-standalone-2.35.0.jar -O wiremock.jar
+          nohup java -jar wiremock.jar --port 8080 &
+          sleep 5
+          echo "WireMock server started on port 8080"
+
+      - name: Configure WireMock Stub
+        run: |
+          curl -X POST http://localhost:8080/__admin/mappings \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "request": { "method": "GET", "url": "/internal-api/status" },
+              "response": { "status": 200, "body": "{\"status\":\"ok\"}", "headers": {"Content-Type": "application/json"} }
+            }'
+      # 7️⃣ Configure AWS Credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # 8️⃣ Unit Tests (Local)
+      #      - name: Run Unit Tests
+      #        working-directory: functionsLamda
+      #        run: mvn test
+
+      # 9️⃣ AWS Service Tests (CDK Synth + Deploy)
+      - name: CDK Synth and Deploy
+        working-directory: infra
+        run: |
+          cdk synth
+          cdk deploy --require-approval never
+          cdk destroy
+
+      # 🔟 Run Local Integration Test (CDK on LocalStack)
+#      - name: Run Local Integration Test
+#        env:
+#          AWS_ACCESS_KEY_ID: test
+#          AWS_SECRET_ACCESS_KEY: test
+#          AWS_REGION: us-east-1
+#        run: |
+#          echo "🏗️ Running CDK inside LocalStack..."
+#
+#          # Point AWS CLI and CDK to LocalStack endpoints
+#          export LOCALSTACK_ENDPOINT=http://localhost:4566
+#          export AWS_PAGER=""
+#          export DEPLOY_ENV=test
+#          export CDK_DEPLOY_REGION=$AWS_REGION
+#          export CDK_DEPLOY_ACCOUNT=000000000000
+#          export AWS_ACCESS_KEY_ID=test
+#          export AWS_SECRET_ACCESS_KEY=test
+#
+#          # Install CDK dependencies and synthesize CloudFormation templates
+#          cd infra
+#          cdk acknowledge "*"
+#          cdk synth
+#
+#          echo "🚀 Deploying CDK stack to LocalStack..."
+#          cdk deploy --require-approval never
+#
+#          echo "✅ CDK deployment complete in LocalStack."
+#
+#          # Display CloudFormation outputs (optional)
+#          cat ./cdk-localstack-outputs.json || echo "No outputs file generated"
+#
+#          echo "📤 Triggering EventBridge event in LocalStack..."
+#          awslocal events put-events --entries file://abc.json
+#
+#          echo "⏳ Waiting for messages in SQS (verifying EventBridge -> SQS -> Lambda -> SNS flow)..."
+#          QUEUE_URL=$(awslocal sqs list-queues --query 'QueueUrls[0]' --output text)
+#          echo "Polling queue: $QUEUE_URL"
+#          awslocal sqs receive-message --queue-url "$QUEUE_URL" --wait-time-seconds 10 || echo "No messages found"
+#
+#          echo "🧭 Checking SNS topic messages (if published)..."
+#          awslocal sns list-topics
+#
+#          echo "✅ Local integration test on emulated AWS (LocalStack) completed successfully!"

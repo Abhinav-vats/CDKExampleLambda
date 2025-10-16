@@ -74,3 +74,4 @@ jobs:
         run: |
           cdk synth
           cdk deploy --require-approval never
+          cdk destroy
